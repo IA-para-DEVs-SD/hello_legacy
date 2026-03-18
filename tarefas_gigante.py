@@ -1,195 +1,232 @@
-# gerenciador de tarefas com funcao gigante
-
-# PROBLEMAS NESTE CÓDIGO:
-# 1. Função gigante com 100+ linhas
-# 2. Código profundamente aninhado
-# 3. Variáveis com nomes de uma letra
-# 4. Falta de funções auxiliares
-# 5. Lógica duplicada
-# 6. Hard-coded valores
-# 7. Sem separação de concerns
-
 import json
 import os
+from dataclasses import dataclass, field, asdict
+from enum import Enum
+from typing import Optional
 
-# RUIM: função gigante que faz TUDO
-def sistema_tarefas():
-    # RUIM: dados em memória, perdem ao fechar
-    t = []  # RUIM: nome de variável ruim
+ARQUIVO_PADRAO = "tarefas.json"
 
-    while True:  # RUIM: loop infinito sem controle adequado
-        # RUIM: UI misturada com lógica
-        print("\n" + "="*50)
-        print("GERENCIADOR DE TAREFAS")
-        print("="*50)
-        print("1 - adicionar tarefa")
-        print("2 - listar tarefas")
-        print("3 - marcar como feita")
-        print("4 - deletar tarefa")
-        print("5 - editar tarefa")
-        print("6 - filtrar por prioridade")
-        print("7 - salvar em arquivo")
-        print("8 - carregar de arquivo")
-        print("0 - sair")
-        print("="*50)
+MENU = """
+==================================================
+GERENCIADOR DE TAREFAS
+==================================================
+1 - adicionar tarefa
+2 - listar tarefas
+3 - marcar como feita
+4 - deletar tarefa
+5 - editar tarefa
+6 - filtrar por prioridade
+7 - salvar em arquivo
+8 - carregar de arquivo
+0 - sair
+=================================================="""
 
-        o = input("opcao: ")  # RUIM: nome de variável ruim
 
-        # RUIM: if/elif gigante
-        if o == "1":
-            # RUIM: lógica de adicionar aqui em vez de função separada
-            n = input("titulo: ")
-            d = input("descricao: ")
-            p = input("prioridade (1-baixa, 2-media, 3-alta): ")
+class Prioridade(str, Enum):
+    BAIXA = "1"
+    MEDIA = "2"
+    ALTA  = "3"
 
-            # RUIM: sem validação
-            tarefa = {"titulo": n, "desc": d, "prio": p, "feita": False}
-            t.append(tarefa)
-            print("tarefa adicionada!")
+    @property
+    def label(self) -> str:
+        return self.name
 
-        elif o == "2":
-            # RUIM: lógica de listagem aqui
-            if len(t) == 0:
-                print("nenhuma tarefa")
-            else:
-                # RUIM: loop complexo com muitos ifs
-                for i in range(len(t)):
-                    # RUIM: lógica de formatação complicada
-                    s = "[X]" if t[i]["feita"] else "[ ]"
-                    if t[i]["prio"] == "1":
-                        p_txt = "BAIXA"
-                    elif t[i]["prio"] == "2":
-                        p_txt = "MEDIA"
-                    elif t[i]["prio"] == "3":
-                        p_txt = "ALTA"
-                    else:
-                        p_txt = "???"
+    @classmethod
+    def valida(cls, valor: str) -> bool:
+        return valor in {p.value for p in cls}
 
-                    print(f"{i+1}. {s} {t[i]['titulo']} - {p_txt}")
-                    print(f"   {t[i]['desc']}")
 
-        elif o == "3":
-            # RUIM: código duplicado (mesma lógica de listagem)
-            if len(t) == 0:
-                print("nenhuma tarefa")
-            else:
-                for i in range(len(t)):
-                    s = "[X]" if t[i]["feita"] else "[ ]"
-                    print(f"{i+1}. {s} {t[i]['titulo']}")
+@dataclass
+class Tarefa:
+    titulo: str
+    desc: str
+    prio: str
+    feita: bool = False
 
-                n = input("numero da tarefa: ")
-                # RUIM: sem try/except para conversão
-                idx = int(n) - 1
+    @property
+    def status(self) -> str:
+        return "[X]" if self.feita else "[ ]"
 
-                # RUIM: validação básica mas sem mensagem clara
-                if idx >= 0 and idx < len(t):
-                    t[idx]["feita"] = True
-                    print("marcada como feita!")
-                else:
-                    print("invalido")
+    @property
+    def prioridade_label(self) -> str:
+        try:
+            return Prioridade(self.prio).label
+        except ValueError:
+            return "???"
 
-        elif o == "4":
-            # RUIM: mais código duplicado
-            if len(t) == 0:
-                print("nenhuma tarefa")
-            else:
-                for i in range(len(t)):
-                    s = "[X]" if t[i]["feita"] else "[ ]"
-                    print(f"{i+1}. {s} {t[i]['titulo']}")
+    def exibir(self, numero: int, mostrar_desc: bool = True) -> None:
+        print(f"{numero}. {self.status} {self.titulo} - {self.prioridade_label}")
+        if mostrar_desc:
+            print(f"   {self.desc}")
 
-                n = input("numero da tarefa: ")
-                idx = int(n) - 1
+    @classmethod
+    def from_dict(cls, dados: dict) -> "Tarefa":
+        return cls(**dados)
 
-                if idx >= 0 and idx < len(t):
-                    # RUIM: sem confirmação antes de deletar
-                    t.pop(idx)
-                    print("deletada!")
-                else:
-                    print("invalido")
+    def to_dict(self) -> dict:
+        return asdict(self)
 
-        elif o == "5":
-            # RUIM: ainda mais código duplicado
-            if len(t) == 0:
-                print("nenhuma tarefa")
-            else:
-                for i in range(len(t)):
-                    print(f"{i+1}. {t[i]['titulo']}")
 
-                n = input("numero da tarefa: ")
-                idx = int(n) - 1
+class GerenciadorTarefas:
+    def __init__(self) -> None:
+        self.tarefas: list[Tarefa] = []
 
-                if idx >= 0 and idx < len(t):
-                    # RUIM: edição inline, confuso
-                    print(f"atual: {t[idx]['titulo']}")
-                    novo_t = input("novo titulo (enter para manter): ")
-                    if novo_t != "":
-                        t[idx]["titulo"] = novo_t
+    # --- helpers internos ---
 
-                    print(f"atual: {t[idx]['desc']}")
-                    novo_d = input("nova desc (enter para manter): ")
-                    if novo_d != "":
-                        t[idx]["desc"] = novo_d
+    def _listar_resumido(self) -> None:
+        for i, tarefa in enumerate(self.tarefas, start=1):
+            print(f"{i}. {tarefa.status} {tarefa.titulo}")
 
-                    print(f"atual: {t[idx]['prio']}")
-                    novo_p = input("nova prio (enter para manter): ")
-                    if novo_p != "":
-                        t[idx]["prio"] = novo_p
+    def _selecionar_indice(self, prompt: str = "numero da tarefa: ") -> Optional[int]:
+        entrada = input(prompt)
+        try:
+            idx = int(entrada) - 1
+        except ValueError:
+            print("entrada invalida")
+            return None
+        if not (0 <= idx < len(self.tarefas)):
+            print("numero fora do intervalo")
+            return None
+        return idx
 
-                    print("atualizada!")
+    def _requer_tarefas(self) -> bool:
+        if not self.tarefas:
+            print("nenhuma tarefa")
+            return False
+        return True
 
-        elif o == "6":
-            # RUIM: filtro ineficiente
-            p = input("prioridade (1/2/3): ")
-            encontrou = False
-            for i in range(len(t)):
-                if t[i]["prio"] == p:
-                    encontrou = True
-                    s = "[X]" if t[i]["feita"] else "[ ]"
-                    print(f"{i+1}. {s} {t[i]['titulo']}")
+    # --- operações de negócio ---
 
-            if not encontrou:
-                print("nenhuma tarefa com essa prioridade")
+    def adicionar(self) -> None:
+        titulo = input("titulo: ").strip()
+        desc   = input("descricao: ").strip()
+        prio   = input("prioridade (1-baixa, 2-media, 3-alta): ").strip()
 
-        elif o == "7":
-            # RUIM: salvamento sem tratamento de erro adequado
-            arquivo = "tarefas.json"
-            with open(arquivo, "w") as f:
-                json.dump(t, f)
+        if not titulo:
+            print("titulo nao pode ser vazio")
+            return
+        if not Prioridade.valida(prio):
+            print("prioridade invalida, use 1, 2 ou 3")
+            return
+
+        self.tarefas.append(Tarefa(titulo=titulo, desc=desc, prio=prio))
+        print("tarefa adicionada!")
+
+    def listar(self) -> None:
+        if not self._requer_tarefas():
+            return
+        for i, tarefa in enumerate(self.tarefas, start=1):
+            tarefa.exibir(i, mostrar_desc=True)
+
+    def marcar_feita(self) -> None:
+        if not self._requer_tarefas():
+            return
+        self._listar_resumido()
+        idx = self._selecionar_indice()
+        if idx is None:
+            return
+        self.tarefas[idx].feita = True
+        print("marcada como feita!")
+
+    def deletar(self) -> None:
+        if not self._requer_tarefas():
+            return
+        self._listar_resumido()
+        idx = self._selecionar_indice()
+        if idx is None:
+            return
+        confirmacao = input(f"deletar '{self.tarefas[idx].titulo}'? (s/n): ").strip().lower()
+        if confirmacao == "s":
+            self.tarefas.pop(idx)
+            print("deletada!")
+        else:
+            print("cancelado")
+
+    def editar(self) -> None:
+        if not self._requer_tarefas():
+            return
+        self._listar_resumido()
+        idx = self._selecionar_indice()
+        if idx is None:
+            return
+
+        tarefa = self.tarefas[idx]
+        campos = [
+            ("titulo", "novo titulo"),
+            ("desc",   "nova desc"),
+            ("prio",   "nova prio"),
+        ]
+        for atributo, prompt in campos:
+            atual = getattr(tarefa, atributo)
+            novo  = input(f"{prompt} (atual: '{atual}', enter para manter): ").strip()
+            if novo:
+                if atributo == "prio" and not Prioridade.valida(novo):
+                    print("prioridade invalida, mantendo valor atual")
+                    continue
+                setattr(tarefa, atributo, novo)
+
+        print("atualizada!")
+
+    def filtrar_por_prioridade(self) -> None:
+        prio = input("prioridade (1/2/3): ").strip()
+        resultado = [
+            (i + 1, tarefa)
+            for i, tarefa in enumerate(self.tarefas)
+            if tarefa.prio == prio
+        ]
+        if not resultado:
+            print("nenhuma tarefa com essa prioridade")
+            return
+        for numero, tarefa in resultado:
+            tarefa.exibir(numero, mostrar_desc=False)
+
+    def salvar(self, arquivo: str = ARQUIVO_PADRAO) -> None:
+        try:
+            with open(arquivo, "w", encoding="utf-8") as f:
+                json.dump([t.to_dict() for t in self.tarefas], f, ensure_ascii=False, indent=2)
             print(f"salvo em {arquivo}")
+        except OSError as e:
+            print(f"erro ao salvar: {e}")
 
-        elif o == "8":
-            # RUIM: carregamento perigoso
-            arquivo = "tarefas.json"
-            if os.path.exists(arquivo):
-                with open(arquivo, "r") as f:
-                    t = json.load(f)  # RUIM: sobrescreve sem avisar
-                print("carregado!")
-            else:
-                print("arquivo nao existe")
+    def carregar(self, arquivo: str = ARQUIVO_PADRAO) -> None:
+        if not os.path.exists(arquivo):
+            print("arquivo nao existe")
+            return
+        try:
+            with open(arquivo, "r", encoding="utf-8") as f:
+                dados = json.load(f)
+            self.tarefas = [Tarefa.from_dict(d) for d in dados]
+            print("carregado!")
+        except (OSError, json.JSONDecodeError, TypeError) as e:
+            print(f"erro ao carregar: {e}")
 
-        elif o == "0":
-            # RUIM: sair sem salvar, perde dados
+
+def sistema_tarefas() -> None:
+    gerenciador = GerenciadorTarefas()
+
+    acoes = {
+        "1": gerenciador.adicionar,
+        "2": gerenciador.listar,
+        "3": gerenciador.marcar_feita,
+        "4": gerenciador.deletar,
+        "5": gerenciador.editar,
+        "6": gerenciador.filtrar_por_prioridade,
+        "7": gerenciador.salvar,
+        "8": gerenciador.carregar,
+    }
+
+    while True:
+        print(MENU)
+        opcao = input("opcao: ").strip()
+
+        if opcao == "0":
             print("tchau!")
             break
+        elif opcao in acoes:
+            acoes[opcao]()
         else:
             print("opcao invalida")
 
-# RUIM: execução direto no módulo
-sistema_tarefas()
 
-# SUGESTÕES DE REFATORAÇÃO:
-# - Criar classe Tarefa com validações
-# - Criar classe GerenciadorTarefas
-# - Separar UI (menu) da lógica de negócio
-# - Extrair cada operação em método próprio
-# - Criar enums para prioridade e status
-# - Implementar padrão Command para operações
-# - Usar list comprehension para filtros
-# - Adicionar confirmação antes de deletar
-# - Auto-save periódico
-# - Implementar padrão Observer para mudanças
-# - Usar biblioteca como Rich para UI melhor
-# - Adicionar testes unitários
-# - Implementar undo/redo
-# - Validar inputs adequadamente
-# - Usar dataclasses para Tarefa
+if __name__ == "__main__":
+    sistema_tarefas()
