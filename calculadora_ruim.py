@@ -1,65 +1,83 @@
-# calculadora mal feita
+"""Calculadora com operações básicas."""
 
-# PROBLEMAS NESTE CÓDIGO:
-# 1. Nomes de variáveis ruins (a, b, x, y, z)
-# 2. Função gigante fazendo tudo
-# 3. Sem tratamento de erros
-# 4. Código duplicado
-# 5. Magic numbers espalhados
-# 6. Sem separação de responsabilidades
-# 7. Print dentro da lógica de negócio
-# 8. Falta de documentação
-# 9. Não usa POO quando deveria
+from typing import Callable
 
-def calc():
-    # RUIM: função gigante que faz tudo
-    print("=== CALCULADORA ===")
-    x = input("numero 1: ")
-    y = input("numero 2: ")
-    z = input("operacao (+,-,*,/): ")
 
-    # RUIM: sem validação, vai quebrar com input inválido
-    a = float(x)
-    b = float(y)
+class Calculadora:
+    """Calculadora que suporta operações aritméticas básicas."""
 
-    # RUIM: if/elif gigante, difícil de manter
-    if z == "+":
-        r = a + b
-        print("resultado:", r)
-    elif z == "-":
-        r = a - b
-        print("resultado:", r)
-    elif z == "*":
-        r = a * b
-        print("resultado:", r)
-    elif z == "/":
-        # RUIM: divisão por zero não é tratada adequadamente
+    def __init__(self) -> None:
+        self._operacoes: dict[str, Callable[[float, float], float]] = {
+            "+": self._somar,
+            "-": self._subtrair,
+            "*": self._multiplicar,
+            "/": self._dividir,
+        }
+
+    @staticmethod
+    def _somar(a: float, b: float) -> float:
+        return a + b
+
+    @staticmethod
+    def _subtrair(a: float, b: float) -> float:
+        return a - b
+
+    @staticmethod
+    def _multiplicar(a: float, b: float) -> float:
+        return a * b
+
+    @staticmethod
+    def _dividir(a: float, b: float) -> float:
         if b == 0:
-            print("erro!")
-        else:
-            r = a / b
-            print("resultado:", r)
-    else:
-        print("operacao invalida")
+            raise ZeroDivisionError("Divisão por zero não é permitida.")
+        return a / b
 
-    # RUIM: código duplicado
-    c = input("continuar? (s/n): ")
-    if c == "s" or c == "S" or c == "sim" or c == "SIM":
-        calc()  # RUIM: recursão sem limite
-    else:
-        print("tchau")
+    @property
+    def operacoes_disponiveis(self) -> str:
+        return ",".join(self._operacoes)
 
-# RUIM: lógica misturada com execução
-calc()
+    def calcular(self, a: float, b: float, operacao: str) -> float:
+        """Executa a operação entre dois números."""
+        if operacao not in self._operacoes:
+            raise ValueError(f"Operação inválida: '{operacao}'. Use: {self.operacoes_disponiveis}")
+        return self._operacoes[operacao](a, b)
 
-# SUGESTÕES DE REFATORAÇÃO:
-# - Criar classe Calculadora
-# - Separar input/output da lógica
-# - Usar try/except para validação
-# - Criar métodos separados para cada operação
-# - Usar dicionário em vez de if/elif
-# - Implementar loop while em vez de recursão
-# - Adicionar type hints
-# - Criar constantes para mensagens
-# - Validar inputs adequadamente
-# - Implementar testes unitários
+
+def _ler_numero(prompt: str) -> float:
+    """Lê e valida um número do usuário."""
+    while True:
+        try:
+            return float(input(prompt))
+        except ValueError:
+            print("Entrada inválida. Digite um número.")
+
+
+def _deseja_continuar() -> bool:
+    """Pergunta se o usuário quer continuar."""
+    resposta = input("Continuar? (s/n): ").strip().lower()
+    return resposta in ("s", "sim")
+
+
+def main() -> None:
+    """Loop principal da calculadora."""
+    calc = Calculadora()
+    print("=== CALCULADORA ===")
+
+    while True:
+        a = _ler_numero("Número 1: ")
+        b = _ler_numero("Número 2: ")
+        operacao = input(f"Operação ({calc.operacoes_disponiveis}): ").strip()
+
+        try:
+            resultado = calc.calcular(a, b, operacao)
+            print(f"Resultado: {resultado}")
+        except (ValueError, ZeroDivisionError) as e:
+            print(f"Erro: {e}")
+
+        if not _deseja_continuar():
+            print("Tchau!")
+            break
+
+
+if __name__ == "__main__":
+    main()
