@@ -1,0 +1,16 @@
+[
+  {
+    "nome": "João Silva",
+    "idade": 25,
+    "email": "joao@email.com",
+    "senha_hash": "b3ba01fd6fc9e62be7612997f190571c7f85d3e86233ce67ce8a3757c68744cf",
+    "ativo": false
+  },
+  {
+    "nome": "Maria Souza",
+    "idade": 31,
+    "email": "maria@email.com",
+    "senha_hash": "f2e54c1f9b4def44c26600b92690db4f986fc560e2b736a9f314a848bae3fa38",
+    "ativo": true
+  }
+]
