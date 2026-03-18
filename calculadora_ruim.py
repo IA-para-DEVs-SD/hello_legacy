@@ -1,65 +1,77 @@
-# calculadora mal feita
+"""Calculadora interativa com separação de responsabilidades."""
 
-# PROBLEMAS NESTE CÓDIGO:
-# 1. Nomes de variáveis ruins (a, b, x, y, z)
-# 2. Função gigante fazendo tudo
-# 3. Sem tratamento de erros
-# 4. Código duplicado
-# 5. Magic numbers espalhados
-# 6. Sem separação de responsabilidades
-# 7. Print dentro da lógica de negócio
-# 8. Falta de documentação
-# 9. Não usa POO quando deveria
+from typing import Callable
 
-def calc():
-    # RUIM: função gigante que faz tudo
+
+class Calculadora:
+    """Encapsula as operações matemáticas da calculadora."""
+
+    OPERACOES: dict[str, Callable[[float, float], float]] = {
+        "+": lambda a, b: a + b,
+        "-": lambda a, b: a - b,
+        "*": lambda a, b: a * b,
+        "/": lambda a, b: a / b,
+    }
+
+    def calcular(self, a: float, b: float, operacao: str) -> float:
+        """Executa a operação entre dois números.
+
+        Raises:
+            ValueError: se a operação for inválida.
+            ZeroDivisionError: se houver divisão por zero.
+        """
+        if operacao not in self.OPERACOES:
+            raise ValueError(f"Operação inválida: '{operacao}'")
+        if operacao == "/" and b == 0:
+            raise ZeroDivisionError("Divisão por zero não é permitida.")
+        return self.OPERACOES[operacao](a, b)
+
+
+def ler_numero(prompt: str) -> float:
+    """Lê e valida um número do usuário."""
+    while True:
+        try:
+            return float(input(prompt))
+        except ValueError:
+            print("Entrada inválida. Digite um número.")
+
+
+def ler_operacao() -> str:
+    """Lê e valida a operação do usuário."""
+    operacoes_validas = {"+", "-", "*", "/"}
+    while True:
+        op = input("Operação (+, -, *, /): ").strip()
+        if op in operacoes_validas:
+            return op
+        print(f"Operação inválida. Escolha entre: {', '.join(operacoes_validas)}")
+
+
+def continuar() -> bool:
+    """Pergunta ao usuário se deseja continuar."""
+    resposta = input("Continuar? (s/n): ").strip().lower()
+    return resposta in {"s", "sim"}
+
+
+def main() -> None:
+    """Loop principal da calculadora."""
+    calc = Calculadora()
     print("=== CALCULADORA ===")
-    x = input("numero 1: ")
-    y = input("numero 2: ")
-    z = input("operacao (+,-,*,/): ")
 
-    # RUIM: sem validação, vai quebrar com input inválido
-    a = float(x)
-    b = float(y)
+    while True:
+        a = ler_numero("Número 1: ")
+        b = ler_numero("Número 2: ")
+        operacao = ler_operacao()
 
-    # RUIM: if/elif gigante, difícil de manter
-    if z == "+":
-        r = a + b
-        print("resultado:", r)
-    elif z == "-":
-        r = a - b
-        print("resultado:", r)
-    elif z == "*":
-        r = a * b
-        print("resultado:", r)
-    elif z == "/":
-        # RUIM: divisão por zero não é tratada adequadamente
-        if b == 0:
-            print("erro!")
-        else:
-            r = a / b
-            print("resultado:", r)
-    else:
-        print("operacao invalida")
+        try:
+            resultado = calc.calcular(a, b, operacao)
+            print(f"Resultado: {resultado}")
+        except ZeroDivisionError as e:
+            print(f"Erro: {e}")
 
-    # RUIM: código duplicado
-    c = input("continuar? (s/n): ")
-    if c == "s" or c == "S" or c == "sim" or c == "SIM":
-        calc()  # RUIM: recursão sem limite
-    else:
-        print("tchau")
+        if not continuar():
+            print("Tchau!")
+            break
 
-# RUIM: lógica misturada com execução
-calc()
 
-# SUGESTÕES DE REFATORAÇÃO:
-# - Criar classe Calculadora
-# - Separar input/output da lógica
-# - Usar try/except para validação
-# - Criar métodos separados para cada operação
-# - Usar dicionário em vez de if/elif
-# - Implementar loop while em vez de recursão
-# - Adicionar type hints
-# - Criar constantes para mensagens
-# - Validar inputs adequadamente
-# - Implementar testes unitários
+if __name__ == "__main__":
+    main()
