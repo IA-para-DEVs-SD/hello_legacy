@@ -1,0 +1,52 @@
+Código refatorado — explicação das melhorias
+
+Estrutura geral
+
+A função monolítica de aproximadamente 160 linhas foi decomposta em três responsabilidades claras, seguindo o princípio SRP (Single Responsibility Principle):
+
+Tarefa — modelo de dados com comportamento próprio
+
+GerenciadorTarefas — lógica de negócio
+
+sistema_tarefas() — loop de interface e entrada do usuário
+
+Principais ganhos
+
+Antes: variáveis com nomes pouco descritivos como t, o, n, p, s
+Depois: nomes claros e semânticos como tarefas, opcao, titulo, prio, status
+
+Antes: lógica de listagem duplicada em 4 pontos do código
+Depois: extração para métodos reutilizáveis como _listar_resumido() e Tarefa.exibir()
+
+Antes: uso de if/elif com 8 ramificações inline
+Depois: uso de dicionário de ações (acoes = {"1": método, ...}), com acesso em O(1) e sem cascata
+
+Antes: conversão direta com int(n) sem tratamento de erro
+Depois: método _selecionar_indice() centraliza conversão e validação
+
+Antes: ausência de validação de prioridade
+Depois: uso de Enum Prioridade com métodos valida() e label
+
+Antes: ausência de validação para título vazio
+Depois: uso de guard clause no método adicionar()
+
+Antes: remoção de itens sem confirmação
+Depois: confirmação explícita (s/n) antes de deletar
+
+Antes: uso de json.dump sem tratamento de erro
+Depois: try/except com tratamento de OSError nos métodos salvar() e carregar()
+
+Antes: uso de json.load sem tratamento de erro
+Depois: tratamento com try/except para OSError, JSONDecodeError e TypeError
+
+Antes: execução automática de sistema_tarefas() no import do módulo
+Depois: protegido com if name == "main"
+
+Antes: formatação de prioridade usando múltiplos elif
+Depois: uso de Prioridade.label com Enum.name
+
+Antes: uso de flag "encontrou" para filtro
+Depois: substituído por list comprehension direta
+
+Antes: loop com for i in range(len(t))
+Depois: uso de for i, tarefa in enumerate(tarefas, start=1)
