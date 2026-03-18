@@ -1,6 +1,6 @@
-# gerenciador de tarefas com funcao gigante
-
-# PROBLEMAS NESTE CÓDIGO:
+import json
+import os
+from dataclasses import dataclass, fie
 # 1. Função gigante com 100+ linhas
 # 2. Código profundamente aninhado
 # 3. Variáveis com nomes de uma letra
