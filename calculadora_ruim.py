@@ -1,65 +1,108 @@
-# calculadora mal feita
+"""Calculadora refatorada com boas práticas."""
 
-# PROBLEMAS NESTE CÓDIGO:
-# 1. Nomes de variáveis ruins (a, b, x, y, z)
-# 2. Função gigante fazendo tudo
-# 3. Sem tratamento de erros
-# 4. Código duplicado
-# 5. Magic numbers espalhados
-# 6. Sem separação de responsabilidades
-# 7. Print dentro da lógica de negócio
-# 8. Falta de documentação
-# 9. Não usa POO quando deveria
+from typing import Optional
 
-def calc():
-    # RUIM: função gigante que faz tudo
-    print("=== CALCULADORA ===")
-    x = input("numero 1: ")
-    y = input("numero 2: ")
-    z = input("operacao (+,-,*,/): ")
+# Constantes de mensagens
+MSG_CABECALHO = "=== CALCULADORA ==="
+MSG_RESULTADO = "resultado:"
+MSG_ERRO_DIVISAO = "erro!"
+MSG_OPERACAO_INVALIDA = "operacao invalida"
+MSG_ENTRADA_INVALIDA = "Entrada inválida. Digite um número válido."
+MSG_SAIDA = "tchau"
+MSG_NUM1 = "numero 1: "
+MSG_NUM2 = "numero 2: "
+MSG_OPERACAO = "operacao (+,-,*,/): "
+MSG_CONTINUAR = "continuar? (s/n): "
+RESPOSTAS_SIM = {"s", "sim"}
 
-    # RUIM: sem validação, vai quebrar com input inválido
-    a = float(x)
-    b = float(y)
 
-    # RUIM: if/elif gigante, difícil de manter
-    if z == "+":
-        r = a + b
-        print("resultado:", r)
-    elif z == "-":
-        r = a - b
-        print("resultado:", r)
-    elif z == "*":
-        r = a * b
-        print("resultado:", r)
-    elif z == "/":
-        # RUIM: divisão por zero não é tratada adequadamente
+class Calculadora:
+    """Classe responsável pela lógica de cálculo."""
+
+    def somar(self, a: float, b: float) -> float:
+        return a + b
+
+    def subtrair(self, a: float, b: float) -> float:
+        return a - b
+
+    def multiplicar(self, a: float, b: float) -> float:
+        return a * b
+
+    def dividir(self, a: float, b: float) -> Optional[float]:
         if b == 0:
-            print("erro!")
+            return None
+        return a / b
+
+    def calcular(self, a: float, b: float, operacao: str) -> Optional[float]:
+        """Executa a operação usando dicionário de dispatch."""
+        operacoes: dict[str, callable] = {
+            "+": self.somar,
+            "-": self.subtrair,
+            "*": self.multiplicar,
+            "/": self.dividir,
+        }
+        func = operacoes.get(operacao)
+        if func is None:
+            return None
+        return func(a, b)
+
+
+def ler_numero(mensagem: str) -> float:
+    """Lê e valida um número do input."""
+    valor = input(mensagem)
+    return float(valor)
+
+
+def usuario_quer_continuar() -> bool:
+    """Verifica se o usuário deseja continuar."""
+    resposta = input(MSG_CONTINUAR)
+    return resposta.strip().lower() in RESPOSTAS_SIM
+
+
+def calc() -> None:
+    """Loop principal da calculadora."""
+    calculadora = Calculadora()
+    continuar = True
+
+    while continuar:
+        print(MSG_CABECALHO)
+
+        a = ler_numero(MSG_NUM1)
+        b = ler_numero(MSG_NUM2)
+        operacao = input(MSG_OPERACAO)
+
+        if operacao not in {"+", "-", "*", "/"}:
+            print(MSG_OPERACAO_INVALIDA)
         else:
-            r = a / b
-            print("resultado:", r)
-    else:
-        print("operacao invalida")
+            resultado = calculadora.calcular(a, b, operacao)
+            if resultado is None:
+                print(MSG_ERRO_DIVISAO)
+            else:
+                print(MSG_RESULTADO, resultado)
 
-    # RUIM: código duplicado
-    c = input("continuar? (s/n): ")
-    if c == "s" or c == "S" or c == "sim" or c == "SIM":
-        calc()  # RUIM: recursão sem limite
-    else:
-        print("tchau")
+        continuar = usuario_quer_continuar()
 
-# RUIM: lógica misturada com execução
+    print(MSG_SAIDA)
+
+
 calc()
 
-# SUGESTÕES DE REFATORAÇÃO:
-# - Criar classe Calculadora
-# - Separar input/output da lógica
-# - Usar try/except para validação
-# - Criar métodos separados para cada operação
-# - Usar dicionário em vez de if/elif
-# - Implementar loop while em vez de recursão
-# - Adicionar type hints
-# - Criar constantes para mensagens
-# - Validar inputs adequadamente
-# - Implementar testes unitários
+# Propts utilizados
+
+# Criação de testes: 
+# crie testes unitarios para a classe calculadora_ruim
+
+# refatoração: 
+# Refatore o código calculadora_ruim aplicando boas práticas, com foco em legibilidade, organização e performance.
+
+# Requisitos:
+
+# Criar classe Calculadora
+# Separar lógica de negócio de input/output
+# Criar métodos para cada operação
+# Usar dicionário em vez de if/elif
+# Implementar loop while (sem recursão)
+# Validar inputs com try/except
+# Adicionar type hints
+# Definir constantes para mensagens
+# Aplicar princípios DRY e SOLID
